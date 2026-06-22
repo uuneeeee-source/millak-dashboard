@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>㈜밀락 | 손익 대시보드 2026년 05월</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --header-bg: #1B2A3B;
+    --header-text: #FFFFFF;
+    --accent: #E8620A;
+    --accent-light: #FEF0E7;
+    --blue-2026: #2D6BE4;
+    --blue-2025: #A8C1F0;
+    --green-2026: #1A9E6E;
+    --green-2025: #8EDFC2;
+    --border: #E5E8EE;
+    --text-primary: #1B2A3B;
+    --text-secondary: #6B7A90;
+    --text-muted: #9AA5B8;
+    --positive: #1A9E6E;
+    --negative: #D93025;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 18px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .page-header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .page-header h1 span { color: #FFB347; font-weight: 300; }
+  .page-header .unit { font-size: 12px; color: #A0AEC0; }
+
+  /* ── Layout ── */
+  .dashboard { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+  }
+  .kpi-card .label { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+  .kpi-card .value { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+  .kpi-card .sub { font-size: 11px; margin-top: 6px; font-weight: 500; }
+  .kpi-card .sub.pos { color: var(--positive); }
+  .kpi-card .sub.neg { color: var(--negative); }
+  .kpi-card .sub.neutral { color: var(--text-secondary); }
+  .kpi-card .sub.accent { color: var(--accent); font-weight: 600; }
+  .kpi-card.highlight { border-left: 3px solid var(--accent); }
+
+  /* ── Section Headers ── */
+  .section { margin-bottom: 24px; }
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ── Chart Panels ── */
+  .chart-panel {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px 22px;
+  }
+  .chart-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+  .chart-subtitle { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; }
+
+  .chart-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .chart-3col { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+
+  .chart-wrap { position: relative; height: 220px; }
+  .chart-wrap-lg { position: relative; height: 240px; }
+  .chart-wrap-sm { position: relative; height: 180px; }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .legend-line { width: 16px; height: 2px; flex-shrink: 0; }
+
+  /* ── Table ── */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .summary-table th {
+    background: #F3F5F8;
+    padding: 8px 10px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 11px;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-table th:first-child { text-align: left; }
+  .summary-table td {
+    padding: 8px 10px;
+    text-align: right;
+    border-bottom: 1px solid #F0F2F5;
+    color: var(--text-primary);
+  }
+  .summary-table td:first-child { text-align: left; font-weight: 500; color: var(--text-secondary); }
+  .summary-table tr.total td { font-weight: 700; color: var(--accent); background: var(--accent-light); }
+  .summary-table tr.profit td { font-weight: 700; color: var(--blue-2026); }
+  .summary-table .rate { color: var(--text-muted); font-size: 11px; }
+
+  /* ── Donut Wrapper ── */
+  .donut-section { display: flex; align-items: center; gap: 20px; }
+  .donut-wrap { position: relative; width: 130px; height: 130px; flex-shrink: 0; }
+  .donut-legend { flex: 1; }
+  .donut-legend .dl-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid #F0F2F5; font-size: 12px;
+  }
+  .donut-legend .dl-item:last-child { border-bottom: none; }
+  .dl-label { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); }
+  .dl-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dl-value { font-weight: 700; color: var(--text-primary); }
+  .dl-pct { font-size: 11px; color: var(--text-muted); margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>㈜밀락 &nbsp;|&nbsp; 손익 대시보드 <span>— 2025 전체 vs 2026 (1~5월)</span></h1>
+  <div class="unit">단위: 천원 (VAT 별도)</div>
+</div>
+
+<div class="dashboard">
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card highlight">
+      <div class="label">2026 누계 매출 (1~5월)</div>
+      <div class="value">1,644,506천원</div>
+      <div class="sub pos">▲ 전년 동기比 17.7%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">2026 누계 영업이익</div>
+      <div class="value">152,461천원</div>
+      <div class="sub neutral">이익률 9.3%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">2025 연간 영업이익</div>
+      <div class="value">224,602천원</div>
+      <div class="sub neutral">이익률 6.4%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">2026 상품/용역 비중 (누계)</div>
+      <div class="value" style="font-size:17px;">상품 69% / 용역 31%</div>
+      <div class="sub accent">1~5월 기준</div>
+    </div>
+  </div>
+
+  <!-- Section 1: 매출 비교 -->
+  <div class="section">
+    <div class="section-title">1. 상품 &amp; 용역 매출 월별 비교 (2025 vs 2026)</div>
+    <div class="chart-panel">
+      <div class="chart-title">상품 &amp; 용역 월별 매출 — 2025 전체 vs 2026 (1~5월)</div>
+      <div class="chart-subtitle">막대 위 메모: 전년 동월 대비 증감률 / 상품(파랑)·용역+임대(초록) 묶음 비교</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue-2026)"></div>2026 상품</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green-2026)"></div>2026 용역</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue-2025)"></div>2025 상품</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green-2025)"></div>2025 용역</div>
+      </div>
+      <div class="chart-wrap-lg"><canvas id="chartSales"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Section 2: 영업이익 -->
+  <div class="section">
+    <div class="section-title">2. 누계 영업이익 비교 (2025 vs 2026)</div>
+    <div class="chart-2col">
+      <div class="chart-panel">
+        <div class="chart-title">영업이익 월별 비교</div>
+        <div class="chart-subtitle">막대 위 메모: 이익률(%) / 우측: 이익률 꺾은선</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue-2026)"></div>2026년</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#D0D5DD"></div>2025년</div>
+          <div class="legend-item"><div class="legend-line" style="background:#E8620A"></div>2026 이익률</div>
+          <div class="legend-item"><div class="legend-line" style="background:#555"></div>2025 이익률</div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartProfit"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-title">영업이익 누계 꺾은선</div>
+        <div class="chart-subtitle">월별 누적 — 연간 성장 흐름 비교</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-line" style="background:var(--blue-2026)"></div>2026 누계</div>
+          <div class="legend-item"><div class="legend-line" style="background:#888;border-top:2px dashed #888;height:0"></div>2025 누계</div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartCumulative"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: 비중 비교 -->
+  <div class="section">
+    <div class="section-title">3. 상품 / 용역 비중 비교 (2025 vs 2026)</div>
+    <div class="chart-3col">
+      <div class="chart-panel">
+        <div class="chart-title">월별 매출 구성 — 2025년</div>
+        <div class="chart-subtitle">상품 vs 용역+임대 비중</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue-2025)"></div>상품</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green-2025)"></div>용역</div>
+        </div>
+        <div class="chart-wrap-sm"><canvas id="chartMix2025"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-title">월별 매출 구성 — 2026년 (1~5월)</div>
+        <div class="chart-subtitle">상품 vs 용역+임대 비중</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue-2026)"></div>상품</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green-2026)"></div>용역</div>
+        </div>
+        <div class="chart-wrap-sm"><canvas id="chartMix2026"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-title">2026 누계 매출 구성</div>
+        <div class="chart-subtitle">1~5월 합산 비중</div>
+        <div class="donut-section" style="margin-top:10px;">
+          <div class="donut-wrap"><canvas id="chartDonut"></canvas></div>
+          <div class="donut-legend">
+            <div class="dl-item">
+              <div class="dl-label"><div class="dl-dot" style="background:var(--blue-2026)"></div>상품</div>
+              <div><span class="dl-value">1,138,487</span><span class="dl-pct">69%</span></div>
+            </div>
+            <div class="dl-item">
+              <div class="dl-label"><div class="dl-dot" style="background:var(--green-2026)"></div>용역</div>
+              <div><span class="dl-value">456,519</span><span class="dl-pct">28%</span></div>
+            </div>
+            <div class="dl-item">
+              <div class="dl-label"><div class="dl-dot" style="background:#FFB347"></div>임대료</div>
+              <div><span class="dl-value">49,500</span><span class="dl-pct">3%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+</div><!-- /dashboard -->
+
+<script>
+Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6B7A90';
+
+const MONTHS_ALL = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const MONTHS_5   = ['1월','2월','3월','4월','5월'];
+
+// Raw data (단위: 천원)
+const s25 = [150176,137433,147139,165285,166186,183654,221178,196270,196283,140791,202024,180826];
+const v25 = [126533,123212,135644,129613,115782,116153,125881,118564,124284,115503,111492,107087];
+const s26 = [198658,160076,232935,294157,252661];
+const v26 = [93338,93014,88047,87620,94501];
+const r26 = [9900,9900,9900,9900,9900];
+
+const p25 = [17661,14514,18866,15893,19749,21831,23776,16833,28242,7406,15743,24086];
+const p26 = [21772,16975,35001,47260,31452];
+
+const rate25 = p25.map((p,i)=>(p/(s25[i]+v25[i])*100));
+const rate26 = p26.map((p,i)=>(p/(s26[i]+v26[i]+r26[i])*100));
+
+const pct = (a,b) => (((a/b)-1)*100).toFixed(1);
+
+// ─── Chart 1: Grouped bar (2026 상품 / 2026 용역 / 2025 상품 / 2025 용역) ───
+(()=>{
+  const ctx = document.getElementById('chartSales').getContext('2d');
+
+  // 2026 용역 = 용역매출 + 임대료
+  const v26r = v26.map((v,i) => v + r26[i]);
+
+  // Labels per bar: index in dataset → which pair index (0~4 for 2026, 0~11 for 2025)
+  const labelPlugin = {
+    id: 'yoyLabels',
+    afterDatasetsDraw(chart) {
+      const {ctx} = chart;
+      ctx.save();
+      ctx.font = 'bold 10px Noto Sans KR';
+      ctx.textAlign = 'center';
+
+      const drawLabel = (bar, val26, val25, isPos) => {
+        const pctVal = (((val26 / val25) - 1) * 100).toFixed(1);
+        const pos = parseFloat(pctVal) >= 0;
+        const label = (pos ? '+' : '') + pctVal + '%';
+        const textColor = pos ? '#1A7A52' : '#B02318';
+        const bgColor   = pos ? '#E6F6EF' : '#FDECEB';
+        const textW = ctx.measureText(label).width;
+        const padX = 4, padY = 2.5;
+        const boxW = textW + padX * 2;
+        const boxH = 14;
+        const bx = bar.x - boxW / 2;
+        const by = bar.y - boxH - 3;
+        ctx.fillStyle = bgColor;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, boxW, boxH, 3);
+        ctx.fill();
+        ctx.fillStyle = textColor;
+        ctx.fillText(label, bar.x, by + boxH - padY);
+      };
+
+      // Dataset 0 = 2026 상품 → compare with 2025 상품 (s25)
+      chart.getDatasetMeta(0).data.forEach((bar, i) => {
+        if (i >= 5) return;
+        drawLabel(bar, s26[i], s25[i]);
+      });
+
+      // Dataset 1 = 2026 용역 → compare with 2025 용역 (v25)
+      chart.getDatasetMeta(1).data.forEach((bar, i) => {
+        if (i >= 5) return;
+        drawLabel(bar, v26r[i], v25[i]);
+      });
+
+      ctx.restore();
+    }
+  };
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS_ALL,
+      datasets: [
+        { label: '2026 상품', data: [...s26, ...Array(7).fill(null)], backgroundColor: '#2D6BE4', borderRadius: 3, categoryPercentage: 0.8, barPercentage: 0.45 },
+        { label: '2026 용역', data: [...v26r, ...Array(7).fill(null)], backgroundColor: '#1A9E6E', borderRadius: 3, categoryPercentage: 0.8, barPercentage: 0.45 },
+        { label: '2025 상품', data: s25, backgroundColor: '#A8C1F0', borderRadius: 3, categoryPercentage: 0.8, barPercentage: 0.45 },
+        { label: '2025 용역', data: v25, backgroundColor: '#8EDFC2', borderRadius: 3, categoryPercentage: 0.8, barPercentage: 0.45 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y/1000).toLocaleString() + '천원' } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          ticks: { callback: v => v.toLocaleString()+'천' },
+          grid: { color: '#F0F2F5' }
+        }
+      }
+    },
+    plugins: [labelPlugin]
+  });
+})();
+
+// ─── Chart 2: Profit bar + rate line ───
+(()=>{
+  const ctx = document.getElementById('chartProfit').getContext('2d');
+
+  const ratePlugin = {
+    id: 'rateLabels',
+    afterDatasetsDraw(chart) {
+      const {ctx} = chart;
+      ctx.save();
+      ctx.font = 'bold 10.5px Noto Sans KR';
+      ctx.textAlign = 'center';
+      const ds = chart.getDatasetMeta(0);
+      ds.data.forEach((bar, i) => {
+        if (i >= 5) return;
+        const label = rate26[i].toFixed(1) + '%';
+        const textW = ctx.measureText(label).width;
+        const padX = 4, padY = 3;
+        const boxW = textW + padX * 2;
+        const boxH = 15;
+        const bx = bar.x - boxW / 2;
+        const by = bar.y - boxH - 4;
+
+        ctx.fillStyle = '#FEF0E7';
+        ctx.beginPath();
+        ctx.roundRect(bx, by, boxW, boxH, 3);
+        ctx.fill();
+
+        ctx.fillStyle = '#C4510A';
+        ctx.fillText(label, bar.x, by + boxH - padY);
+      });
+      ctx.restore();
+    }
+  };
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS_ALL,
+      datasets: [
+        { label: '2026년', data: [...p26, ...Array(7).fill(null)], backgroundColor: '#2D6BE4', borderRadius: 3, yAxisID: 'y', order: 2 },
+        { label: '2025년', data: p25, backgroundColor: '#D0D5DD', borderRadius: 3, yAxisID: 'y', order: 3 },
+        { label: '2026 이익률', data: [...rate26, ...Array(7).fill(null)], type: 'line', borderColor: '#E8620A', backgroundColor: 'transparent', pointBackgroundColor: '#E8620A', pointRadius: 4, yAxisID: 'y2', order: 1, tension: 0.3 },
+        { label: '2025 이익률', data: rate25, type: 'line', borderColor: '#555', borderDash: [4,3], backgroundColor: 'transparent', pointBackgroundColor: '#555', pointRadius: 3, yAxisID: 'y2', order: 1, tension: 0.3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ctx.dataset.label.includes('률') ? ctx.parsed.y.toFixed(1)+'%' : ctx.parsed.y.toLocaleString()+'천원' }
+      }},
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => v.toLocaleString()+'천' }, grid: { color: '#F0F2F5' } },
+        y2: { position: 'right', ticks: { callback: v => v.toFixed(0)+'%' }, grid: { display: false }, min: 0, max: 15 }
+      }
+    },
+    plugins: [ratePlugin]
+  });
+})();
+
+// ─── Chart 3: Cumulative line ───
+(()=>{
+  const ctx = document.getElementById('chartCumulative').getContext('2d');
+  const cum26 = p26.reduce((a,v,i)=>[...a, (a[i-1]||0)+v], []);
+  const cum25 = p25.reduce((a,v,i)=>[...a, (a[i-1]||0)+v], []);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: MONTHS_ALL,
+      datasets: [
+        {
+          label: '2026 누계',
+          data: [...cum26, ...Array(7).fill(null)],
+          borderColor: '#2D6BE4', backgroundColor: 'rgba(45,107,228,0.08)',
+          fill: true, pointRadius: 5, pointBackgroundColor: '#2D6BE4', tension: 0.3
+        },
+        {
+          label: '2025 누계',
+          data: cum25,
+          borderColor: '#999', borderDash: [5,4], backgroundColor: 'transparent',
+          pointRadius: 3, pointBackgroundColor: '#999', tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString()+'천원' }
+      }},
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => v.toLocaleString()+'천' }, grid: { color: '#F0F2F5' } }
+      }
+    }
+  });
+})();
+
+// ─── Chart 4: Mix 2025 stacked bar ───
+(()=>{
+  const ctx = document.getElementById('chartMix2025').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS_ALL,
+      datasets: [
+        { label: '상품', data: s25, backgroundColor: '#A8C1F0', stack: 's', borderRadius: 2 },
+        { label: '용역', data: v25, backgroundColor: '#8EDFC2', stack: 's', borderRadius: 2 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString()+'천원' }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, ticks: { callback: v => v.toLocaleString()+'천' }, grid: { color: '#F0F2F5' } }
+      }
+    }
+  });
+})();
+
+// ─── Chart 5: Mix 2026 stacked bar ───
+(()=>{
+  const ctx = document.getElementById('chartMix2026').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS_5,
+      datasets: [
+        { label: '상품', data: s26, backgroundColor: '#2D6BE4', stack: 's', borderRadius: 2 },
+        { label: '용역', data: v26.map((v,i) => v + r26[i]), backgroundColor: '#1A9E6E', stack: 's', borderRadius: 2 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString()+'천원' }
+      }},
+      scales: {
+        x: { grid: { display: false } },
+        y: { stacked: true, ticks: { callback: v => v.toLocaleString()+'천' }, grid: { color: '#F0F2F5' } }
+      }
+    }
+  });
+})();
+
+// ─── Chart 6: Donut ───
+(()=>{
+  const ctx = document.getElementById('chartDonut').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['상품', '용역', '임대료'],
+      datasets: [{
+        data: [1138487335, 456518797, 49500000],
+        backgroundColor: ['#2D6BE4', '#1A9E6E', '#FFB347'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + (ctx.parsed/ctx.dataset.data.reduce((a,b)=>a+b,0)*100).toFixed(1)+'%' } }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
